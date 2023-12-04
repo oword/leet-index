@@ -1,9 +1,4 @@
-# todo:
-# - setup cli commands to:
-# start tracking data about loc and time & stop
-# upload data to github
-# maybe in the future provide a visual bar graph of data in terminal
-# - make file that user inputs any number of folders into that leet-index scans to see if any files with a specific file extension like .cpp or .hpp exist
+# very simple prototype that I wrote as an implementation for leet-index, hope you enjoy!
 
 import argparse
 import glob
