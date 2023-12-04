@@ -13,8 +13,9 @@ def get_num_lines(filename):
     content = file.read()
     return content.count('\n')
 
-def get_lines_of_code(dirs, exts):
+def get_lines_of_code(dirs, exts, excl):
     total_lines = 0
+
     for x in dirs:
         if not os.path.isdir(x):
             print(x, "is not a valid directory")
@@ -22,7 +23,14 @@ def get_lines_of_code(dirs, exts):
         for k in exts:
             for q in glob.glob(x + "/**/*." + k, recursive=True):
                 # print(q)
-                total_lines += get_num_lines(q)
+                skip = False
+                for e in excl:
+                    if(e == q):
+                        print(e)
+                        skip = True
+                
+                if(not skip):
+                    total_lines += get_num_lines(q)
 
     return total_lines
 
@@ -30,6 +38,7 @@ def get_lines_of_code(dirs, exts):
 def parse_config():
     dirs = []
     exts = []
+    excl = []
 
     if not os.path.isfile("./leet-config.txt"):
         print("no config! make sure you ran ")
@@ -42,8 +51,10 @@ def parse_config():
             dirs = line.replace("directories:", "").strip().split(',')
         elif line.startswith("extensions:"):
            exts = line.replace("extensions:", "").strip().split(',')
+        elif line.startswith("excludes:"):
+            excl = line.replace("excludes:", "").strip().split(',')
     
-    return dirs, exts
+    return dirs, exts, excl
 
 parser = argparse.ArgumentParser("leet-index")
 parser.add_argument('--start', action='store_true', help="start tracking work session")
@@ -53,10 +64,11 @@ args = parser.parse_args()
 
 if(args.get):
     if not os.path.isfile("./leet-config.txt"):
-        file = open("leet-config.txt", "w")
-        file.write("# be careful when setting directories as leet-index recursively globs them, example input: extensions:hpp,cpp")
+        file = open("leet-config.txt", 'a')
+        file.write("# be careful when setting directories as leet-index recursively globs them, example input: extensions:hpp,cpp, exclude currently only works for files\n")
         file.write("directories:\n")
-        file.write("extensions:")
+        file.write("extensions:\n")
+        file.write("excludes:\n")
     else:
         print("leet-config already exists")
 
@@ -69,8 +81,8 @@ if(args.start):
         print("timer has already been started, please stop it before starting a new session")
         exit()
     
-    dirs, exts = parse_config()
-    total_lines = get_lines_of_code(dirs, exts)
+    dirs, exts, excl = parse_config()
+    total_lines = get_lines_of_code(dirs, exts, excl)
 
     f = open("leet-temp.txt", 'w')
     f.write("dont delete this file while in session!\n")
@@ -83,10 +95,8 @@ if(args.stop):
         print("no data! are you sure you started a timer?")
         exit()
     
-    
-    dirs, exts = parse_config()
-
-    total_lines = get_lines_of_code(dirs, exts)
+    dirs, exts, excl = parse_config()
+    total_lines = get_lines_of_code(dirs, exts, excl)
     epoch_time = time.time()
     start_total_lines = 0
     start_epoch_time = 0
@@ -109,10 +119,18 @@ if(args.stop):
     # converting the time from seconds to hours
     diff_epoch_time = (diff_epoch_time/60)/60
 
-    leet_index = round(diff_total_lines/diff_epoch_time, 1)
+    # if its been less than an hour, multiply by time rather than div otherwise we will get some outrageously high number
+    if(1 > diff_epoch_time):
+        leet_index = round(diff_total_lines * diff_epoch_time, 1)
+    else:
+        leet_index = round(diff_total_lines/diff_epoch_time, 1)
+    
     date = datetime.now().strftime("%A, %y-%m-%d")
 
+    data = str.format("[leet-index:{} | lines of code:{} | time spent:{}m | date: {}]\n", leet_index, diff_total_lines, round((diff_epoch_time*60)), date)
+
     d = open('leet-data.txt', 'a')
-    d.write(str.format("[leet-index:{} lines of code:{} time spent:{}m date: {}]\n", leet_index, diff_total_lines, round((diff_epoch_time*60)), date))
+    d.write(data)
+    f.close()
     os.remove("leet-temp.txt")
-    print("successfully ended session!")
+    print("successfully ended session! heres the stats", data)
