@@ -34,6 +34,48 @@ def get_lines_of_code(dirs, exts, excl):
 
     return total_lines
 
+def get_streak():
+    cur_streak = 1
+
+    if not os.path.isfile("./leet-data.txt"):
+        return cur_streak
+        
+    f = open("leet-data.txt", 'r')
+    dates = []
+
+    for x in f:
+        cur_date = x.replace(']', '').split(',')[1].strip()
+        already_exists = False
+
+        for k in dates:
+            if(cur_date == k):
+                already_exists = True
+        
+        if(not already_exists):
+            dates.append(cur_date)
+
+    if(len(dates) == 1):
+        #I couldnt subtract a strftime obj by strptime so we're ust gonna make it strptime
+        date_obj = datetime.strptime(datetime.now().strftime("%y-%m-%d"), "%y-%m-%d")
+        date_prev_obj = datetime.strptime(dates[0], "%y-%m-%d")
+
+        if (date_obj - date_prev_obj).days == 1:
+            cur_streak += 1
+        print(cur_streak)
+    
+    for i in range(len(dates)-1, -1, -1):
+        date_obj = datetime.strptime(dates[i], "%y-%m-%d")
+        date_prev_obj = datetime.strptime(dates[i-1], "%y-%m-%d")
+
+        if (date_obj - date_prev_obj).days == 1:
+            cur_streak += 1
+        else:
+            break
+
+    return cur_streak
+
+get_streak()
+
 # get data from leet-config.txt and put into dirs & exts
 def parse_config():
     dirs = []
@@ -41,7 +83,7 @@ def parse_config():
     excl = []
 
     if not os.path.isfile("./leet-config.txt"):
-        print("no config! make sure you ran ")
+        print("no config! make sure you ran --get")
         exit()
 
     f = open("leet-config.txt", 'r')
@@ -126,11 +168,15 @@ if(args.stop):
         leet_index = round(diff_total_lines/diff_epoch_time, 1)
     
     date = datetime.now().strftime("%A, %y-%m-%d")
+    streak = get_streak()
 
-    data = str.format("[leet-index:{} | lines of code:{} | time spent:{}m | date: {}]\n", leet_index, diff_total_lines, round((diff_epoch_time*60)), date)
+    if streak > 1:
+        data = str.format("[leet-index:{} | lines of code:{} | time spent:{}h | streak:{}d | date: {}]\n", leet_index, diff_total_lines, round(diff_epoch_time, 1), streak, date)
+    else:
+        data = str.format("[leet-index:{} | lines of code:{} | time spent:{}h | date: {}]\n", leet_index, diff_total_lines, round(diff_epoch_time, 1), date)
 
     d = open('leet-data.txt', 'a')
     d.write(data)
     f.close()
     os.remove("leet-temp.txt")
-    print("successfully ended session! heres the stats", data)
+    print("successfully ended session! heres the stats:\n", data)
