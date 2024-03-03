@@ -1,4 +1,6 @@
 # leet-index
+NOTE: this is a really unfinished project and its honestly really trash and needs work but I figured someone might be interested in it.
+
 simple productivity metric for programmers
 
 leet-index is a tool to quantify productivity by using a qualitative(lines of code) and quantitative(time) factor
